@@ -1,0 +1,59 @@
+<ETHERNETKRL>
+  <CONFIGURATION>
+    <EXTERNAL>
+      <TYPE>Client</TYPE>
+    </EXTERNAL>
+    <INTERNAL>
+      <IP>192.168.109.29</IP>
+      <PORT>54600</PORT>
+      <ALIVE Set_Flag="1"/>
+      <BUFFERING Mode="FIFO" Limit="512"/>
+      <BUFFSIZE Limit="65534"/>
+    </INTERNAL>
+  </CONFIGURATION>
+  <RECEIVE>
+    <XML>
+      <ELEMENT Tag="Sensor/Status/@Reset" 		 		              Type="BOOL" Set_Flag="2"/>
+      <ELEMENT Tag="Sensor/Command/Set/@base" 	                Type="BOOL" Set_Flag="3"/>
+      <ELEMENT Tag="Sensor/Command/Set/@tcp" 	   	              Type="BOOL" Set_Flag="4"/>
+      <ELEMENT Tag="Sensor/Command/Set/@joints" 	              Type="BOOL" Set_Flag="5"/>
+      <ELEMENT Tag="Sensor/Command/Set/@movement" 	            Type="BOOL" Set_Flag="6"/>
+      <ELEMENT Tag="Sensor/Command/Goto/@stop"                  Type="BOOL"/>
+      <ELEMENT Tag="Sensor/Command/Goto/xyzabc" 	 	            Type="FRAME"/>
+      <ELEMENT Tag="Sensor/Command/Set/joints/@A1" 	            Type="REAL"/>
+      <ELEMENT Tag="Sensor/Command/Set/joints/@A2" 	            Type="REAL"/>
+      <ELEMENT Tag="Sensor/Command/Set/joints/@A3" 	            Type="REAL"/>
+      <ELEMENT Tag="Sensor/Command/Set/joints/@A4" 	            Type="REAL"/>
+      <ELEMENT Tag="Sensor/Command/Set/joints/@A5" 	            Type="REAL"/>
+      <ELEMENT Tag="Sensor/Command/Set/joints/@A6" 	            Type="REAL"/>
+      <ELEMENT Tag="Sensor/Command/Set/base" 				            Type="FRAME"/>
+      <ELEMENT Tag="Sensor/Command/Set/tcp" 				            Type="FRAME"/>
+      <ELEMENT Tag="Sensor/Command/Set/movement/@speed"         Type="REAL"/>
+      <ELEMENT Tag="Sensor/Command/Set/movement/@acceleration"  Type="REAL"/>
+      <ELEMENT Tag="Sensor/Status/@Count" 				              Type="INT"/>
+    </XML>
+  </RECEIVE>
+  <SEND>
+    <XML>
+      <ELEMENT Tag="Robot/Data/ActPos/@X"/>
+      <ELEMENT Tag="Robot/Data/ActPos/@Y"/>
+      <ELEMENT Tag="Robot/Data/ActPos/@Z"/>
+      <ELEMENT Tag="Robot/Data/ActPos/@A"/>
+      <ELEMENT Tag="Robot/Data/ActPos/@B"/>
+      <ELEMENT Tag="Robot/Data/ActPos/@C"/>
+      <ELEMENT Tag="Robot/Data/FlangePos/@X"/>
+      <ELEMENT Tag="Robot/Data/FlangePos/@Y"/>
+      <ELEMENT Tag="Robot/Data/FlangePos/@Z"/>
+      <ELEMENT Tag="Robot/Data/FlangePos/@A"/>
+      <ELEMENT Tag="Robot/Data/FlangePos/@B"/>
+      <ELEMENT Tag="Robot/Data/FlangePos/@C"/>
+      <ELEMENT Tag="Robot/Data/Joints/@A1"/>
+      <ELEMENT Tag="Robot/Data/Joints/@A2"/>
+      <ELEMENT Tag="Robot/Data/Joints/@A3"/>
+      <ELEMENT Tag="Robot/Data/Joints/@A4"/>
+      <ELEMENT Tag="Robot/Data/Joints/@A5"/>
+      <ELEMENT Tag="Robot/Data/Joints/@A6"/>
+      <ELEMENT Tag="Robot/Status/@error"/>
+    </XML>
+  </SEND>
+</ETHERNETKRL>

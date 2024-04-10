@@ -1,0 +1,137 @@
+&ACCESS RVO
+&REL 1
+&PARAM SensorITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+&PARAM DISKPATH = KRC:\R1\Program
+DEF XmlLinearFollower( )
+;FOLD Declaration
+   DECL EKI_STATUS RET
+   INT i
+   INT count
+   BOOL setBase
+   BOOL setTcp
+   BOOL setJoints
+   BOOL setMovement
+   BOOL stopCP
+   REAL speed
+   REAL acc
+   FRAME moveTo
+   FRAME tcp
+   FRAME baseFrame
+   AXIS  axisPose
+;ENDFOLD (Declaration)
+;FOLD INI
+   ;FOLD BASISTECH INI
+      BAS (#INITMOV,0 )
+   ;ENDFOLD (BASISTECH INI)
+   ;FOLD USER INI
+      ;Make your modifications here
+      setBase = False
+      setTcp = False
+      setJoints = False
+      setMovement = False
+      stopCP = False
+      count = 0
+      axisPose = {A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}
+      speed = 0.1
+      acc = 20.0
+      moveTo = $NULLFRAME
+      tcp = $NULLFRAME
+      baseFrame = $NULLFRAME
+   ;ENDFOLD (USER INI)
+;ENDFOLD (INI)
+
+PTP $POS_ACT
+BAS(#VEL_CP, speed)
+BAS(#ACC_CP, acc)
+
+   $ADVANCE = 5
+   $APO.CPTP = 1
+   $APO.CDIS = 1    
+   $APO.CVEL= 100 
+
+   $ORI_TYPE = #JOINT
+
+While True
+   ;FOLD TCP INI
+      RET=EKI_Init("XmlServerFollow")
+      RET=EKI_Open("XmlServerFollow")
+   ;ENDFOLD (TCP INI)
+
+   ; wait until server is conntected
+   wait for $FLAG[1]
+   
+      While $FLAG[1]
+         wait for not $FLAG[1] or $FLAG[2]
+      
+         if $FLAG[2] THEN
+            ;FOLD Receive and Move
+            RET=EKI_GetBool("XmlServerFollow","Sensor/Command/Set/@base"    ,  setBase    )
+            RET=EKI_GetBool("XmlServerFollow","Sensor/Command/Set/@tcp"     ,  setTcp     )
+            RET=EKI_GetBool("XmlServerFollow","Sensor/Command/Set/@joints"  ,  setJoints  )
+            RET=EKI_GetBool("XmlServerFollow","Sensor/Command/Set/@movement",  setMovement)
+            if setBase then
+               RET=EKI_GetFrame("XmlServerFollow","Sensor/Command/Set/base", baseFrame)
+               $BASE = baseFrame
+            ENDIF
+            if setTcp then
+               RET=EKI_GetFrame("XmlServerFollow","Sensor/Command/Set/tcp",  tcp)               
+               $TOOL = tcp
+            endif
+            if setMovement then
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/movement/@speed", speed)
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/movement/@acceleration", acc)
+               BAS(#VEL_CP, speed)
+               BAS(#ACC_CP, acc)
+            endif
+            if setJoints then
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/joints/@A1", axisPose.A1)
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/joints/@A2", axisPose.A2)
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/joints/@A3", axisPose.A3)
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/joints/@A4", axisPose.A4)
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/joints/@A5", axisPose.A5)
+               RET=EKI_GetReal("XmlServerFollow","Sensor/Command/Set/joints/@A6", axisPose.A6)
+               
+               PTP axisPose
+            endif
+
+            RET=EKI_GetInt("XmlServerFollow","Sensor/Status/@Count",count)
+            RET=EKI_GetBool("XmlServerFollow","Sensor/Command/Goto/@stop",stopCP)
+            FOR i = 1 to count
+               RET=EKI_GetFrame("XmlServerFollow","Sensor/Command/Goto/xyzabc",moveTo)
+               LIN moveTo C_VEL
+            ENDFOR
+            IF stopCP THEN
+               LIN moveTo 
+            ENDIF
+            
+            RET = EKI_ClearBuffer("XmlServerFollow", "Sensor");
+            ;ENDFOLD (Receive and Move)
+            
+            ;FOLD Send
+            RET=EKI_SetFrame("XmlServerFollow","Robot/Data/ActPos", $POS_ACT)
+            tcp = $TOOL
+            $TOOL = $NULLFRAME
+            RET=EKI_SetFrame("XmlServerFollow","Robot/Data/FlangePos", $POS_ACT)
+            $TOOL = tcp
+            RET=EKI_SetReal("XmlServerFollow","Robot/Data/Joints/@A1", $AXIS_ACT.A1)
+            RET=EKI_SetReal("XmlServerFollow","Robot/Data/Joints/@A2", $AXIS_ACT.A2)
+            RET=EKI_SetReal("XmlServerFollow","Robot/Data/Joints/@A3", $AXIS_ACT.A3)
+            RET=EKI_SetReal("XmlServerFollow","Robot/Data/Joints/@A4", $AXIS_ACT.A4)
+            RET=EKI_SetReal("XmlServerFollow","Robot/Data/Joints/@A5", $AXIS_ACT.A5)
+            RET=EKI_SetReal("XmlServerFollow","Robot/Data/Joints/@A6", $AXIS_ACT.A6)
+            
+            RET = EKI_Send("XmlServerFollow","Robot")
+            RET = EKI_ClearBuffer("XmlServerFollow", "Robot");
+            ;ENDFOLD (Send)
+            
+            $FLAG[2]=False
+            
+         endif
+      endwhile
+         
+   RET=EKI_Clear("XmlServerFollow")
+ENDWHILE
+
+
+END
