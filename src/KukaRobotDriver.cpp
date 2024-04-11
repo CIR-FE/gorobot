@@ -195,9 +195,9 @@ void KukaRobotDriver_addPose(kXml &xmlSend, GoRobot::KukaPose pt)
     kXml_SetAttr64f(xmlSend, itemFrame, "X", pt.x);
     kXml_SetAttr64f(xmlSend, itemFrame, "Y", pt.y);
     kXml_SetAttr64f(xmlSend, itemFrame, "Z", pt.z);
-    kXml_SetAttr64f(xmlSend, itemFrame, "C", pt.rx);
-    kXml_SetAttr64f(xmlSend, itemFrame, "B", pt.ry);
     kXml_SetAttr64f(xmlSend, itemFrame, "A", pt.rz);
+    kXml_SetAttr64f(xmlSend, itemFrame, "B", pt.ry);
+    kXml_SetAttr64f(xmlSend, itemFrame, "C", pt.rx);
 
     kSize count = 0;
     if (kOK != kXml_AttrSize(xmlSend, itemStatus, "Count", &count))
@@ -217,11 +217,11 @@ RobotMsg KukaRobotDriver::set_tcp(GoRobot::KukaPose tcp)
     kXml_SetAttr64f(xmlSend, itemFrame, "X", tcp.x);
     kXml_SetAttr64f(xmlSend, itemFrame, "Y", tcp.y);
     kXml_SetAttr64f(xmlSend, itemFrame, "Z", tcp.z);
-    kXml_SetAttr64f(xmlSend, itemFrame, "C", tcp.rx);
-    kXml_SetAttr64f(xmlSend, itemFrame, "B", tcp.ry);
     kXml_SetAttr64f(xmlSend, itemFrame, "A", tcp.rz);
+    kXml_SetAttr64f(xmlSend, itemFrame, "B", tcp.ry);
+    kXml_SetAttr64f(xmlSend, itemFrame, "C", tcp.rx);
 
-    std::cout << std::format("Setting tcp to: X={}, Y={}, Z={}, A={}, B={}, C={}", tcp.x, tcp.y, tcp.z, tcp.rz, tcp.ry, tcp.rx);
+    std::cout << std::format("Setting tcp to: X={}, Y={}, Z={}, A={}, B={}, C={}", tcp.x, tcp.y, tcp.z, tcp.rz, tcp.ry, tcp.rx) << "\n";
     return sendMessage(&xmlSend);
 }
 RobotMsg KukaRobotDriver::set_base(GoRobot::KukaPose base)
@@ -236,11 +236,11 @@ RobotMsg KukaRobotDriver::set_base(GoRobot::KukaPose base)
     kXml_SetAttr64f(xmlSend, itemFrame, "X", base.x);
     kXml_SetAttr64f(xmlSend, itemFrame, "Y", base.y);
     kXml_SetAttr64f(xmlSend, itemFrame, "Z", base.z);
-    kXml_SetAttr64f(xmlSend, itemFrame, "C", base.rx);
-    kXml_SetAttr64f(xmlSend, itemFrame, "B", base.ry);
     kXml_SetAttr64f(xmlSend, itemFrame, "A", base.rz);
+    kXml_SetAttr64f(xmlSend, itemFrame, "B", base.ry);
+    kXml_SetAttr64f(xmlSend, itemFrame, "C", base.rx);
 
-    std::cout << std::format("Setting base to: X={}, Y={}, Z={}, A={}, B={}, C={}", base.x, base.y, base.z, base.rz, base.ry, base.rx);
+    std::cout << std::format("Setting base to: X={}, Y={}, Z={}, A={}, B={}, C={}", base.x, base.y, base.z, base.rz, base.ry, base.rx) << "\n";
     return sendMessage(&xmlSend);
 }
 RobotMsg KukaRobotDriver::move(GoRobot::KukaPose *pList, kSize pCount)
@@ -259,7 +259,7 @@ RobotMsg KukaRobotDriver::move(GoRobot::KukaPose *pList, kSize pCount)
             msgPoseCount = 0;
         }
 
-        std::cout << std::format("Moving to: X={}, Y={}, Z={}, A={}, B={}, C={}", pList[i].x, pList[i].y, pList[i].z, pList[i].rz, pList[i].ry, pList[i].rx);
+        std::cout << std::format("Moving to: X={}, Y={}, Z={}, A={}, B={}, C={}", pList[i].x, pList[i].y, pList[i].z, pList[i].rz, pList[i].ry, pList[i].rx) << "\n";
         KukaRobotDriver_addPose(xmlSend, pList[i]);
         msgPoseCount++;
     }

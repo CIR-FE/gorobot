@@ -44,7 +44,7 @@ void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
     }
 }
 // X 1054, Y 957, Z 797, A -163, B 86, C 110
-GoRobot::Matrix initPose = GoRobot::KukaPose(1054, 957, 797, -163, 86, -110).toMatrix();
+GoRobot::Matrix initPose = GoRobot::KukaPose(1054, 957, 797, 110, 86, -163).toMatrix();
 GoRobot::Matrix movePose = GoRobot::KukaPose(0, -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER), 0, 0, 0, 0).toMatrix();
 GoRobot::Matrix tcp = GoRobot::KukaPose(0, 0, 300, 0, 0, 0).toMatrix();
 
@@ -73,11 +73,14 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
         // Which is useful for taking multiple scans of the same object (ball bar) from different angles.
         // Note the ballbar should be laying flat at around Z=0
         GoRobot::EyeOnHandCalibrationPoses(tcpPoses.size(), 7, initPose, tcpPoses.data());
+        size_t i{0};
         for (GoRobot::Matrix startPose : tcpPoses)
         {
+            std::cout << "Pose number " << i << "\n";
             // Find the end pose of the frame
             GoRobot::Matrix endPose = startPose * movePose;
 
+            std::cout << "Start pose\n";
             robotDriver->move(&startPose, 1);
             rPoses.push_back(robotDriver->get_flange_pose());
             std::cout << "Flange:\t";
@@ -87,6 +90,7 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
             kTest(GoSensor_Start(sensor));
             // Trigger a surface generation on the sensor
             kTest(GoSensor_Trigger(sensor));
+            std::cout << "End pose\n";
             robotDriver->move(&endPose, 1);
 
             kTest(GoSystem_ReceiveData(system, &dataset, 20000000));
@@ -98,6 +102,7 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
             kDestroyRef(&dataset);
 
             kTest(GoSensor_Stop(sensor));
+            ++i;
         }
         robotDriver->move(&initPose);
 
