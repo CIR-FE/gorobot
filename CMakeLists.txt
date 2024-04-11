@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(gorobot VERSION 0.1.0 LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(DLL_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/win64d")
 
 # Disable min and max macros on Windows 

@@ -4,6 +4,7 @@
 #include <kApi/kApi.h>
 #include <kApi/Data/kString.h>
 #include <vector>
+#include <format>
 
 static kXml KukaRobotDriver_startNewMessage(kAlloc alloc)
 {
@@ -24,7 +25,7 @@ static kXml KukaRobotDriver_startNewMessage(kAlloc alloc)
     kXml_SetAttrBool(xmlSend, itemSet, "tcp", false);
     kXml_SetAttrBool(xmlSend, itemSet, "joints", false);
     kXml_SetAttrBool(xmlSend, itemSet, "movement", false);
-    kXml_SetAttrBool(xmlSend, itemGoto, "stop", true);
+    kXml_SetAttrBool(xmlSend, itemGoto, "stop", false);
 
     return xmlSend;
 }
@@ -220,6 +221,7 @@ RobotMsg KukaRobotDriver::set_tcp(GoRobot::KukaPose tcp)
     kXml_SetAttr64f(xmlSend, itemFrame, "B", tcp.ry);
     kXml_SetAttr64f(xmlSend, itemFrame, "A", tcp.rz);
 
+    std::cout << std::format("Setting tcp to: X={}, Y={}, Z={}, A={}, B={}, C={}", tcp.x, tcp.y, tcp.z, tcp.rz, tcp.ry, tcp.rx);
     return sendMessage(&xmlSend);
 }
 RobotMsg KukaRobotDriver::set_base(GoRobot::KukaPose base)
@@ -238,6 +240,7 @@ RobotMsg KukaRobotDriver::set_base(GoRobot::KukaPose base)
     kXml_SetAttr64f(xmlSend, itemFrame, "B", base.ry);
     kXml_SetAttr64f(xmlSend, itemFrame, "A", base.rz);
 
+    std::cout << std::format("Setting base to: X={}, Y={}, Z={}, A={}, B={}, C={}", base.x, base.y, base.z, base.rz, base.ry, base.rx);
     return sendMessage(&xmlSend);
 }
 RobotMsg KukaRobotDriver::move(GoRobot::KukaPose *pList, kSize pCount)
@@ -256,6 +259,7 @@ RobotMsg KukaRobotDriver::move(GoRobot::KukaPose *pList, kSize pCount)
             msgPoseCount = 0;
         }
 
+        std::cout << std::format("Moving to: X={}, Y={}, Z={}, A={}, B={}, C={}", pList[i].x, pList[i].y, pList[i].z, pList[i].rz, pList[i].ry, pList[i].rx);
         KukaRobotDriver_addPose(xmlSend, pList[i]);
         msgPoseCount++;
     }

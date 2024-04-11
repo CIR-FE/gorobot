@@ -43,10 +43,10 @@ void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
         printf("%12.3e, %12.3e, %12.3e \n", m.Tx, m.Ty, m.Tz);
     }
 }
-
-GoRobot::Matrix initPose = GoRobot::KukaPose(250, -120, 30, 180, 0, 0).toMatrix();
+// X 1054, Y 957, Z 797, A -163, B 86, C 110
+GoRobot::Matrix initPose = GoRobot::KukaPose(1054, 957, 797, -163, 86, -110).toMatrix();
 GoRobot::Matrix movePose = GoRobot::KukaPose(0, -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER), 0, 0, 0, 0).toMatrix();
-GoRobot::Matrix tcp = GoRobot::KukaPose(0, 0, 200, 0, 0, 0).toMatrix();
+GoRobot::Matrix tcp = GoRobot::KukaPose(0, 0, 300, 0, 0, 0).toMatrix();
 
 /***
  * This fucntion performs a EyeOnHand calibration for a G2 sensor mounted on the Kuka arm
