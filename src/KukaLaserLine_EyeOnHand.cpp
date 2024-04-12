@@ -43,8 +43,8 @@ void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
         printf("%12.3e, %12.3e, %12.3e \n", m.Tx, m.Ty, m.Tz);
     }
 }
-// X 1054, Y 957, Z 797, A -163, B 86, C 110
-GoRobot::Matrix initPose = GoRobot::KukaPose(1054, 957, 797, 110, 86, -163).toMatrix();
+
+GoRobot::Matrix initPose = GoRobot::KukaPose(1054, 957, 797, 110, 86, -163).toMatrix(); // X 1054, Y 957, Z 797, A -163, B 86, C 110
 GoRobot::Matrix movePose = GoRobot::KukaPose(0, -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER), 0, 0, 0, 0).toMatrix();
 GoRobot::Matrix tcp = GoRobot::KukaPose(0, 0, 300, 0, 0, 0).toMatrix();
 
@@ -73,7 +73,7 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
         // Which is useful for taking multiple scans of the same object (ball bar) from different angles.
         // Note the ballbar should be laying flat at around Z=0
         GoRobot::EyeOnHandCalibrationPoses(tcpPoses.size(), 7, initPose, tcpPoses.data());
-        size_t i{0};
+        size_t i{1};
         for (GoRobot::Matrix startPose : tcpPoses)
         {
             std::cout << "Pose number " << i << "\n";
@@ -123,7 +123,7 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
 }
 
 /***
- * This fucntion is an application example to locating and moving to an object.
+ * This function is an application example to locating and moving to an object.
  * It scans the ballbar again, and moves the TCP to be above the center of one of the balls
  *
  * @param    system      The Gocator System object

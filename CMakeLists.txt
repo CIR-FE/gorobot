@@ -3,6 +3,7 @@ project(gorobot VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(DLL_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/win64d")
+option(BUILD_TESTING "Build the testing tree." ON)
 
 # Disable min and max macros on Windows 
 add_definitions(-DNOMINMAX)
@@ -57,3 +58,5 @@ add_custom_command(TARGET gorobot POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${DLL_DIRECTORY}/GoRobot.dll
     $<TARGET_FILE_DIR:gorobot>)
+
+add_subdirectory(tests)
