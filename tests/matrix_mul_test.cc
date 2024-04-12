@@ -1,23 +1,54 @@
 #include <gtest/gtest.h>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include "GoRobot/GoRobotMatrix.h"
 #include "RobotDrivers/KukaRobotDriver.h"
 
-void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
+Eigen::Matrix4d xyzabcToTransformationMatrix(double x, double y, double z, double a, double b, double c)
 {
-    if (multiline)
-    {
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Ix, m.Jx, m.Kx, m.Tx);
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Iy, m.Jy, m.Ky, m.Ty);
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Iz, m.Jz, m.Kz, m.Tz);
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", 0.0, 0.0, 0.0, 1.0);
-    }
-    else
-    {
-        printf("%12.3e, %12.3e, %12.3e, ", m.Ix, m.Iy, m.Iz);
-        printf("%12.3e, %12.3e, %12.3e, ", m.Jx, m.Jy, m.Jz);
-        printf("%12.3e, %12.3e, %12.3e, ", m.Kx, m.Ky, m.Kz);
-        printf("%12.3e, %12.3e, %12.3e \n", m.Tx, m.Ty, m.Tz);
-    }
+    // Convert a, b, c to a rotation matrix
+    Eigen::AngleAxisd aAngle(a, Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd bAngle(b, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd cAngle(c, Eigen::Vector3d::UnitX());
+
+    Eigen::Quaternion<double> q = cAngle * bAngle * aAngle;
+
+    Eigen::Matrix3d rotationMatrix = q.matrix();
+
+    // Create a 4x4 transformation matrix
+    Eigen::Matrix4d transformationMatrix = Eigen::Matrix4d::Identity();
+
+    // Set the rotation part
+    transformationMatrix.block<3, 3>(0, 0) = rotationMatrix;
+
+    // Set the translation part
+    transformationMatrix(0, 3) = x;
+    transformationMatrix(1, 3) = y;
+    transformationMatrix(2, 3) = z;
+
+    return transformationMatrix;
+}
+
+TEST(MatrixTest, EigenvsGoRobot)
+{
+    double x{1053}, y{957}, z{797}, A{-163}, B{86}, C{110};
+
+    GoRobot::Matrix goRobotMatrix = GoRobot::KukaPose(x, y, z, A, B, C).toMatrix();
+    Eigen::Matrix4d eigenMatrix = xyzabcToTransformationMatrix(x, y, z, A, B, C);
+
+    // Compare the values of goRobotMatrix and eigenMatrix
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Ix, eigenMatrix(0, 0));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Iy, eigenMatrix(1, 0));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Iz, eigenMatrix(2, 0));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Jx, eigenMatrix(0, 1));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Jy, eigenMatrix(1, 1));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Jz, eigenMatrix(2, 1));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Kx, eigenMatrix(0, 2));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Ky, eigenMatrix(1, 2));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Kz, eigenMatrix(2, 2));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Tx, eigenMatrix(0, 3));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Ty, eigenMatrix(1, 3));
+    EXPECT_DOUBLE_EQ(goRobotMatrix.Tz, eigenMatrix(2, 3));
 }
 
 TEST(MatrixTest, Multiplication)
@@ -163,27 +194,22 @@ TEST(MatrixTest, KukaPose)
 {
     // Arrange
     GoRobot::Matrix matrix = GoRobot::KukaPose(1054, 957, 797, 110, 86, -163).toMatrix();
-    GoRobot::Matrix movePose = GoRobot::KukaPose(0, -200, 0, 0, 0, 0).toMatrix();
-
-    printMatrix(matrix, true);
-    printf("\n");
-    printMatrix(movePose, true);
-    printf("\n");
+    GoRobot::Matrix movePose = GoRobot::KukaPose(0, 0, -200, 0, 0, 0).toMatrix();
 
     // Act
     GoRobot::Matrix result = matrix * movePose;
 
     // Assert
-    EXPECT_DOUBLE_EQ(result.Ix, 1.0);
-    EXPECT_DOUBLE_EQ(result.Iy, 0.0);
-    EXPECT_DOUBLE_EQ(result.Iz, 0.0);
-    EXPECT_DOUBLE_EQ(result.Jx, 0.0);
-    EXPECT_DOUBLE_EQ(result.Jy, 1.0);
-    EXPECT_DOUBLE_EQ(result.Jz, 0.0);
-    EXPECT_DOUBLE_EQ(result.Kx, 0.0);
-    EXPECT_DOUBLE_EQ(result.Ky, 0.0);
-    EXPECT_DOUBLE_EQ(result.Kz, 1.0);
+    EXPECT_DOUBLE_EQ(result.Ix, -0.066708447600717785);
+    EXPECT_DOUBLE_EQ(result.Iy, -0.020394819144016807);
+    EXPECT_DOUBLE_EQ(result.Iz, -0.99756405025982420);
+    EXPECT_DOUBLE_EQ(result.Jx, -0.99644051109511778);
+    EXPECT_DOUBLE_EQ(result.Jy, 0.053005207938078114);
+    EXPECT_DOUBLE_EQ(result.Jz, 0.065549643629400661);
+    EXPECT_DOUBLE_EQ(result.Kx, 0.051539216788796971);
+    EXPECT_DOUBLE_EQ(result.Ky, 0.99838594705831274);
+    EXPECT_DOUBLE_EQ(result.Kz, -0.023858119147859035);
     EXPECT_DOUBLE_EQ(result.Tx, 1054.0);
     EXPECT_DOUBLE_EQ(result.Ty, 757.0);
-    EXPECT_DOUBLE_EQ(result.Tz, 797.0);
+    EXPECT_DOUBLE_EQ(result.Tz, 597.0);
 }

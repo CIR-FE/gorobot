@@ -1,5 +1,5 @@
-# Find Google Test
 find_package(GTest CONFIG REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Add test cpp file
 add_executable(matrix_mul_test
@@ -14,6 +14,7 @@ target_link_libraries(matrix_mul_test
     kApi
     GoSdk
     GoRobot
+    Eigen3::Eigen
     GTest::gtest 
     GTest::gtest_main)
 

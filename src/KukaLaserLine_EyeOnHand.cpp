@@ -44,8 +44,10 @@ void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
     }
 }
 
-GoRobot::Matrix initPose = GoRobot::KukaPose(1054, 957, 797, 110, 86, -163).toMatrix(); // X 1054, Y 957, Z 797, A -163, B 86, C 110
-GoRobot::Matrix movePose = GoRobot::KukaPose(0, -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER), 0, 0, 0, 0).toMatrix();
+GoRobot::Matrix initPose = GoRobot::KukaPose(1018, 1092, 802, 110, 86, -163).toMatrix(); // X 1054, Y 957, Z 797, A -163, B 86, C 110
+// GoRobot::Matrix movePose = GoRobot::KukaPose(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER, 0, 0, 0, 0, 0).toMatrix();
+// GoRobot::Matrix movePose = GoRobot::KukaPose(0, -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER), 0, 0, 0, 0).toMatrix();
+GoRobot::Matrix movePose = GoRobot::KukaPose(0, 0, -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER), 0, 0, 0).toMatrix(); // moves -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER) in Y axis of the robot
 GoRobot::Matrix tcp = GoRobot::KukaPose(0, 0, 300, 0, 0, 0).toMatrix();
 
 /***
