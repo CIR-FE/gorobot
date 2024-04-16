@@ -3,6 +3,7 @@
 #include <Eigen/Geometry>
 #include "GoRobot/GoRobotMatrix.h"
 #include "RobotDrivers/KukaRobotDriver.h"
+#include "DomePoseGenerator.h"
 
 Eigen::Matrix4d xyzabcToTransformationMatrix(double x, double y, double z, double a, double b, double c)
 {
@@ -29,57 +30,175 @@ Eigen::Matrix4d xyzabcToTransformationMatrix(double x, double y, double z, doubl
     return transformationMatrix;
 }
 
-TEST(MatrixTest, EigenvsGoRobot)
+TEST(MatrixTest, Dome)
 {
-    double x{1053}, y{957}, z{797}, A{-163}, B{86}, C{110};
+    const size_t numberPoses{5};
+    const size_t maxDeviationDegrees{7};
+    // std::vector<GoRobot::Matrix> tcpPoses(numberPoses);
+    // std::vector<GoRobot::KukaPose> goRobotKukaPoses(numberPoses);
+    std::vector<GoRobot::KukaPose> eigenKukaPoses;
+    GoRobot::Matrix initPose = GoRobot::KukaPose(991, 978, 488, 180, 0, -90).toMatrix(); // X 996, Y 1061, Z 785, A -90, B 0, C 180
 
-    GoRobot::Matrix goRobotMatrix = GoRobot::KukaPose(x, y, z, A, B, C).toMatrix();
-    Eigen::Matrix4d eigenMatrix = xyzabcToTransformationMatrix(x, y, z, A, B, C);
+    // GoRobot::EyeOnHandCalibrationPoses(numberPoses, maxDeviationDegrees, initPose, tcpPoses.data());
 
-    // Compare the values of goRobotMatrix and eigenMatrix
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Ix, eigenMatrix(0, 0));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Iy, eigenMatrix(1, 0));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Iz, eigenMatrix(2, 0));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Jx, eigenMatrix(0, 1));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Jy, eigenMatrix(1, 1));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Jz, eigenMatrix(2, 1));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Kx, eigenMatrix(0, 2));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Ky, eigenMatrix(1, 2));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Kz, eigenMatrix(2, 2));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Tx, eigenMatrix(0, 3));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Ty, eigenMatrix(1, 3));
-    EXPECT_DOUBLE_EQ(goRobotMatrix.Tz, eigenMatrix(2, 3));
+    std::vector<GoRobot::Matrix> eigenPoses = DomePoseGenerator::generateDomePoses(initPose, numberPoses, 15, 15, 5);
+
+    for (const auto &pose : eigenPoses)
+    {
+        // goRobotKukaPoses[i] = GoRobot::KukaPose(tcpPoses[i]);
+        eigenKukaPoses.push_back(GoRobot::KukaPose(pose));
+    }
 }
 
 TEST(MatrixTest, Multiplication)
 {
     // Arrange
-    GoRobot::Matrix matrix1(1.0, 0.0, 0.0,
-                            0.0, 1.0, 0.0,
-                            0.0, 0.0, 1.0,
-                            0.0, 0.0, 0.0);
+    GoRobot::Matrix matrix1(2.0, 3.0, 4.0,
+                            5.0, 6.0, 7.0,
+                            8.0, 9.0, 10.0,
+                            11.0, 12.0, 13.0);
 
     GoRobot::Matrix matrix2(2.0, 0.0, 0.0,
                             0.0, 2.0, 0.0,
                             0.0, 0.0, 2.0,
-                            0.0, 0.0, 0.0);
+                            5.0, 6.0, 7.0);
 
     // Act
     GoRobot::Matrix result = matrix1 * matrix2;
 
     // Assert
-    EXPECT_DOUBLE_EQ(result.Ix, 2.0);
+    EXPECT_DOUBLE_EQ(result.Ix, 4.0);
+    EXPECT_DOUBLE_EQ(result.Iy, 6.0);
+    EXPECT_DOUBLE_EQ(result.Iz, 8.0);
+    EXPECT_DOUBLE_EQ(result.Jx, 10.0);
+    EXPECT_DOUBLE_EQ(result.Jy, 12.0);
+    EXPECT_DOUBLE_EQ(result.Jz, 14.0);
+    EXPECT_DOUBLE_EQ(result.Kx, 16.0);
+    EXPECT_DOUBLE_EQ(result.Ky, 18.0);
+    EXPECT_DOUBLE_EQ(result.Kz, 20.0);
+    EXPECT_DOUBLE_EQ(result.Tx, 107.0);
+    EXPECT_DOUBLE_EQ(result.Ty, 126.0);
+    EXPECT_DOUBLE_EQ(result.Tz, 145.0);
+}
+
+TEST(MatrixTest, OnlyTranslation)
+{
+    // Arrange
+    GoRobot::Matrix matrix1(1.0, 0.0, 0.0,
+                            0.0, 1.0, 0.0,
+                            0.0, 0.0, 1.0,
+                            11.0, 12.0, 13.0);
+
+    GoRobot::Matrix matrix2(1.0, 0.0, 0.0,
+                            0.0, 1.0, 0.0,
+                            0.0, 0.0, 1.0,
+                            5.0, 6.0, 7.0);
+
+    // Act
+    GoRobot::Matrix result = matrix1 * matrix2;
+
+    // Assert
+    EXPECT_DOUBLE_EQ(result.Ix, 1.0);
     EXPECT_DOUBLE_EQ(result.Iy, 0.0);
     EXPECT_DOUBLE_EQ(result.Iz, 0.0);
     EXPECT_DOUBLE_EQ(result.Jx, 0.0);
-    EXPECT_DOUBLE_EQ(result.Jy, 2.0);
+    EXPECT_DOUBLE_EQ(result.Jy, 1.0);
     EXPECT_DOUBLE_EQ(result.Jz, 0.0);
     EXPECT_DOUBLE_EQ(result.Kx, 0.0);
     EXPECT_DOUBLE_EQ(result.Ky, 0.0);
-    EXPECT_DOUBLE_EQ(result.Kz, 2.0);
-    EXPECT_DOUBLE_EQ(result.Tx, 0.0);
-    EXPECT_DOUBLE_EQ(result.Ty, 0.0);
-    EXPECT_DOUBLE_EQ(result.Tz, 0.0);
+    EXPECT_DOUBLE_EQ(result.Kz, 1.0);
+    EXPECT_DOUBLE_EQ(result.Tx, 16.0);
+    EXPECT_DOUBLE_EQ(result.Ty, 18.0);
+    EXPECT_DOUBLE_EQ(result.Tz, 20.0);
+}
+
+TEST(MatrixTest, KukaToMatrix)
+{
+    // Arrange
+    GoRobot::Matrix matrix1 = GoRobot::KukaPose(996, 1061, 785, 0, 0, 0).toMatrix();
+
+    GoRobot::Matrix matrix2(1.0, 0.0, 0.0,
+                            0.0, 1.0, 0.0,
+                            0.0, 0.0, 1.0,
+                            996.0, 1061.0, 785.0);
+
+    // Assert
+    EXPECT_DOUBLE_EQ(matrix1.Ix, matrix2.Ix);
+    EXPECT_DOUBLE_EQ(matrix1.Iy, matrix2.Iy);
+    EXPECT_DOUBLE_EQ(matrix1.Iz, matrix2.Iz);
+    EXPECT_DOUBLE_EQ(matrix1.Jx, matrix2.Jx);
+    EXPECT_DOUBLE_EQ(matrix1.Jy, matrix2.Jy);
+    EXPECT_DOUBLE_EQ(matrix1.Jz, matrix2.Jz);
+    EXPECT_DOUBLE_EQ(matrix1.Kx, matrix2.Kx);
+    EXPECT_DOUBLE_EQ(matrix1.Ky, matrix2.Ky);
+    EXPECT_DOUBLE_EQ(matrix1.Kz, matrix2.Kz);
+    EXPECT_DOUBLE_EQ(matrix1.Tx, matrix2.Tx);
+    EXPECT_DOUBLE_EQ(matrix1.Ty, matrix2.Ty);
+    EXPECT_DOUBLE_EQ(matrix1.Tz, matrix2.Tz);
+}
+
+TEST(MatrixTest, KukaTranslation)
+{
+    // Arrange
+    GoRobot::Matrix matrix = GoRobot::KukaPose(100, 200, 300, 0, 0, 0).toMatrix();
+    GoRobot::Matrix movePose = GoRobot::KukaPose(0, 0, 200, 0, 0, 0).toMatrix();
+
+    // Act
+    GoRobot::Matrix result = matrix * movePose;
+    GoRobot::KukaPose kukaPose = GoRobot::KukaPose(result);
+
+    // Assert
+    EXPECT_DOUBLE_EQ(kukaPose.x, 100.0);
+    EXPECT_DOUBLE_EQ(kukaPose.y, 200.0);
+    EXPECT_DOUBLE_EQ(kukaPose.z, 500.0);
+    EXPECT_DOUBLE_EQ(kukaPose.rx, 0.0);
+    EXPECT_DOUBLE_EQ(kukaPose.ry, 0.0);
+    EXPECT_DOUBLE_EQ(kukaPose.rz, 0.0);
+}
+
+TEST(MatrixTest, KukaTranslation2)
+{
+    // Arrange
+    GoRobot::Matrix initPose = GoRobot::KukaPose(991, 978, 488, 180, 0, -90).toMatrix(); // X 996, Y 1061, Z 785, A -90, B 0, C 180
+    GoRobot::Matrix movePose = GoRobot::KukaPose(200, 0, 0, 0, 0, 0).toMatrix();
+
+    // Act
+    GoRobot::Matrix result = initPose * movePose;
+    GoRobot::KukaPose kukaPose = GoRobot::KukaPose(result);
+
+    // Assert
+    EXPECT_DOUBLE_EQ(kukaPose.x, 991.0);
+    EXPECT_DOUBLE_EQ(kukaPose.y, 778.0);
+    EXPECT_DOUBLE_EQ(kukaPose.z, 488.0);
+    EXPECT_DOUBLE_EQ(kukaPose.rx, 180.0);
+    EXPECT_DOUBLE_EQ(kukaPose.ry, 0.0);
+    EXPECT_DOUBLE_EQ(kukaPose.rz, -90.0);
+}
+
+TEST(MatrixTest, Inverse)
+{
+    // Arrange
+    GoRobot::Matrix initPose = GoRobot::KukaPose(996, 1061, 785, 90, 0, 0).toMatrix();
+    GoRobot::Matrix endPose = GoRobot::KukaPose(996, 861, 785, 90, 0, 0).toMatrix();
+
+    GoRobot::Matrix expected = GoRobot::KukaPose(0, -200, 0, 0, 0, 0).toMatrix();
+
+    // Act
+    GoRobot::Matrix result = endPose * initPose.Inverse();
+
+    // Assert
+    EXPECT_DOUBLE_EQ(result.Ix, expected.Ix);
+    EXPECT_DOUBLE_EQ(result.Iy, expected.Iy);
+    EXPECT_DOUBLE_EQ(result.Iz, expected.Iz);
+    EXPECT_DOUBLE_EQ(result.Jx, expected.Jx);
+    EXPECT_DOUBLE_EQ(result.Jy, expected.Jy);
+    EXPECT_DOUBLE_EQ(result.Jz, expected.Jz);
+    EXPECT_DOUBLE_EQ(result.Kx, expected.Kx);
+    EXPECT_DOUBLE_EQ(result.Ky, expected.Ky);
+    EXPECT_DOUBLE_EQ(result.Kz, expected.Kz);
+    EXPECT_DOUBLE_EQ(result.Tx, expected.Tx);
+    EXPECT_DOUBLE_EQ(result.Ty, expected.Ty);
+    EXPECT_DOUBLE_EQ(result.Tz, expected.Tz);
 }
 
 TEST(MatrixTest, IdentityMultiplication)
@@ -188,28 +307,4 @@ TEST(MatrixTest, isUnity)
 
     // Act & Assert
     EXPECT_FALSE(matrix.isUnity());
-}
-
-TEST(MatrixTest, KukaPose)
-{
-    // Arrange
-    GoRobot::Matrix matrix = GoRobot::KukaPose(1054, 957, 797, 110, 86, -163).toMatrix();
-    GoRobot::Matrix movePose = GoRobot::KukaPose(0, 0, -200, 0, 0, 0).toMatrix();
-
-    // Act
-    GoRobot::Matrix result = matrix * movePose;
-
-    // Assert
-    EXPECT_DOUBLE_EQ(result.Ix, -0.066708447600717785);
-    EXPECT_DOUBLE_EQ(result.Iy, -0.020394819144016807);
-    EXPECT_DOUBLE_EQ(result.Iz, -0.99756405025982420);
-    EXPECT_DOUBLE_EQ(result.Jx, -0.99644051109511778);
-    EXPECT_DOUBLE_EQ(result.Jy, 0.053005207938078114);
-    EXPECT_DOUBLE_EQ(result.Jz, 0.065549643629400661);
-    EXPECT_DOUBLE_EQ(result.Kx, 0.051539216788796971);
-    EXPECT_DOUBLE_EQ(result.Ky, 0.99838594705831274);
-    EXPECT_DOUBLE_EQ(result.Kz, -0.023858119147859035);
-    EXPECT_DOUBLE_EQ(result.Tx, 1054.0);
-    EXPECT_DOUBLE_EQ(result.Ty, 757.0);
-    EXPECT_DOUBLE_EQ(result.Tz, 597.0);
 }
