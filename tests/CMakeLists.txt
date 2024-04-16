@@ -10,10 +10,11 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/include
 )
 
-target_link_libraries(matrix_mul_test 
+target_link_libraries(matrix_mul_test
     kApi
     GoSdk
     GoRobot
+    dome_gen_lib
     Eigen3::Eigen
     GTest::gtest 
     GTest::gtest_main)

@@ -66,6 +66,7 @@ void KukaRobotDriver::set_acc_speed(double acceleration, double speed, GoRobot::
     kXml_SetAttr64f(xmlSend, itemMovement, "speed", speed_meters);
     kXml_SetAttr64f(xmlSend, itemMovement, "acceleration", acceleration_meters);
 
+    std::cout << std::format("Setting speed to: {} mm/s and acceleration to: {} mm/s^2", speed, acceleration) << "\n";
     sendMessage(&xmlSend);
 }
 void KukaRobotDriver::move(GoRobot::Matrix *poseList, size_t poseCount, GoRobot::MoveMode moveMode)
