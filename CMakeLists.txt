@@ -18,7 +18,7 @@ else()
     set(GOCATORARCH "win64")
 endif()
 
-set(DLL_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${GOCATORARCH})
+set(DLL_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 ## GOCATOR SDK
 include_directories(
@@ -28,7 +28,7 @@ include_directories(
     
 link_directories(
     $ENV{GOCATORROOT}/lib/${GOCATORARCH}
-    lib/win64d
+    lib
     )
 
 add_executable(gorobot 
