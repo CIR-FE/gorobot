@@ -13,18 +13,18 @@ add_definitions(-DNOMINMAX)
 include(CTest)
 enable_testing()
 
-if(NOT DEFINED ENV{GO_SDK_4})
-    message(FATAL_ERROR "La variable de entorno GO_SDK_4 no está definida")
+if(NOT DEFINED ENV{GOCATORROOT})
+    message(FATAL_ERROR "La variable de entorno GOCATORROOT no está definida")
 endif()
 
 ## GOCATOR SDK
 include_directories(
-    $ENV{GO_SDK_4}/Gocator/GoSdk
-    $ENV{GO_SDK_4}/Platform/kApi
+    $ENV{GOCATORROOT}/Gocator/GoSdk
+    $ENV{GOCATORROOT}/Platform/kApi
     )
     
 link_directories(
-    $ENV{GO_SDK_4}/lib/win64d
+    $ENV{GOCATORROOT}/lib/win64d
     lib/win64d
     )
 
