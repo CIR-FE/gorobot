@@ -8,36 +8,38 @@
  * Redistributed files must retain the above copyright notice.
  */
 
-#include <iostream>
-#include <vector>
-#include <GoSdk/GoSdk.h>
 #include <GoRobot/GoRobot.h>
+#include <GoSdk/GoSdk.h>
 #include <RobotDrivers/KukaRobotDriver.h>
-#include <string>
 #include <windows.h>
-#include "DomePoseGenerator.h"
 
-#define SENSOR_IP_ADDRESS "172.31.0.62" // Change this to the Sensor's IP address
-#define ROBOT_IP_ADDRESS "172.31.0.40"  // Change this to the Robot's IP address
-#define ROBOT_PORT 54600                // Change this to the Robot's Connection Port (specified in the XmlServerFollow.xml)
+#include <iostream>
+#include <string>
+#include <vector>
+
+
+#define SENSOR_IP_ADDRESS "192.168.1.10"  // Change this to the Sensor's IP address
+#define ROBOT_IP_ADDRESS "192.168.1.20"   // Change this to the Robot's IP address
+#define ROBOT_PORT \
+    54600  // Change this to the Robot's Connection Port (specified in the
+           // XmlServerFollow.xml)
 
 #define NUMBER_OF_POSES 5
-#define SPEED 100                // mm/sec
-#define ACCELERATION 150000      // mm/sec^2
-#define SURFACE_LENGTH 150       // mm
-#define SURFACE_LENGTH_BUFFER 50 // mm
+#define SPEED 100                 // mm/sec
+#define ACCELERATION 150000       // mm/sec^2
+#define SURFACE_LENGTH 150        // mm
+#define SURFACE_LENGTH_BUFFER 50  // mm
+
+using namespace std;
 
 void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
 {
-    if (multiline)
-    {
+    if (multiline) {
         printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Ix, m.Jx, m.Kx, m.Tx);
         printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Iy, m.Jy, m.Ky, m.Ty);
         printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Iz, m.Jz, m.Kz, m.Tz);
         printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", 0.0, 0.0, 0.0, 1.0);
-    }
-    else
-    {
+    } else {
         printf("%12.3e, %12.3e, %12.3e, ", m.Ix, m.Iy, m.Iz);
         printf("%12.3e, %12.3e, %12.3e, ", m.Jx, m.Jy, m.Jz);
         printf("%12.3e, %12.3e, %12.3e, ", m.Kx, m.Ky, m.Kz);
@@ -45,12 +47,14 @@ void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
     }
 }
 
-GoRobot::Matrix initPose = GoRobot::KukaPose(991, 978, 488, 180, 0, -90).toMatrix(); // X 996, Y 1061, Z 785, A -90, B 0, C 180
-GoRobot::Matrix movePose = GoRobot::KukaPose(200, 0, 0, 0, 0, 0).toMatrix();
-GoRobot::Matrix tcp = GoRobot::KukaPose(305, 0, 195, 0, 90, 0).toMatrix();
+GoRobot::Matrix initPose = GoRobot::KukaPose(250, -120, 30, 180, 0, 0).toMatrix();
+GoRobot::Matrix movePose =
+    GoRobot::KukaPose(0, -(SURFACE_LENGTH + SURFACE_LENGTH_BUFFER), 0, 0, 0, 0).toMatrix();
+GoRobot::Matrix tcp = GoRobot::KukaPose(0, 0, 200, 0, 0, 0).toMatrix();
 
 /***
- * This fucntion performs a EyeOnHand calibration for a G2 sensor mounted on the Kuka arm
+ * This fucntion performs a EyeOnHand calibration for a G2 sensor mounted on the
+ *Kuka arm
  *
  * @param    system  The Gocator System object
  * @param    sensor  The Gocator Sensor object
@@ -62,65 +66,53 @@ GoRobot::Matrix tcp = GoRobot::KukaPose(305, 0, 195, 0, 90, 0).toMatrix();
 kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver,
                   GoRobot::Matrix *handEye)
 {
-    std::vector<GoRobot::Matrix> rPoses, sPoses;
+    vector<GoRobot::Matrix> rPoses, sPoses;
+    vector<GoRobot::Matrix> tcpPoses(NUMBER_OF_POSES);
+    vector<GoRobot::Matrix> results(tcpPoses.size());
     GoDataSet dataset = kNULL;
     GoRobot::Matrix poseMatrix;
 
     kTry
     {
-        // The function EyeOnHandCalibrationPoses returns a list of poses on a dome looking down on an object in the center.
-        // Which is useful for taking multiple scans of the same object (ball bar) from different angles.
-        // Note the ballbar should be laying flat at around Z=0
-        std::vector<GoRobot::Matrix> tcpPoses = DomePoseGenerator::generateDomePoses(initPose, NUMBER_OF_POSES, 5, 15, 5);
-        // GoRobot::EyeOnHandCalibrationPoses(tcpPoses.size(), 7, initPose, tcpPoses.data());
-        size_t i{1};
-        for (GoRobot::Matrix startPose : tcpPoses)
-        {
-            std::cout << "Pose number " << i << "\n";
+        // The function EyeOnHandCalibrationPoses returns a list of poses on a dome
+        // looking down on an object in the center. Which is useful for taking
+        // multiple scans of the same object (ball bar) from different angles. Note
+        // the ballbar should be laying flat at around Z=0
+        GoRobot::EyeOnHandCalibrationPoses(tcpPoses.size(), 7, initPose, tcpPoses.data());
+        for (GoRobot::Matrix startPose : tcpPoses) {
             // Find the end pose of the frame
             GoRobot::Matrix endPose = startPose * movePose;
 
-            std::cout << "Start pose\n";
             robotDriver->move(&startPose, 1);
             rPoses.push_back(robotDriver->get_flange_pose());
-            std::cout << "Flange:\t";
+            cout << "Flange:\t";
             printMatrix(robotDriver->get_flange_pose());
             Sleep(500);
 
             kTest(GoSensor_Start(sensor));
             // Trigger a surface generation on the sensor
             kTest(GoSensor_Trigger(sensor));
-            std::cout << "End pose\n";
             robotDriver->move(&endPose, 1);
 
             kTest(GoSystem_ReceiveData(system, &dataset, 20000000));
-
-            try
-            {
-                poseMatrix = GoRobot::GetBallBarPoseMeasurement(dataset, 0);
-            }
-            catch (const std::exception &e)
-            {
-                std::cerr << "Exception caught: " << e.what() << '\n';
-            }
-
+            poseMatrix = GoRobot::GetBallBarPoseMeasurement(dataset, 0);
             sPoses.push_back(poseMatrix);
-            std::cout << "Sensor:\t";
+            cout << "Sensor:\t";
             printMatrix(poseMatrix);
 
             kDestroyRef(&dataset);
 
             kTest(GoSensor_Stop(sensor));
-            ++i;
         }
         robotDriver->move(&initPose);
 
-        // Perform the calibration based on the list of robot poses and the ballbar poses
+        // Perform the calibration based on the list of robot poses and the ballbar
+        // poses
         *handEye = GoRobot::CalibEyeOnHandSystem(rPoses.data(), sPoses.data(), (k32s)rPoses.size());
 
-        std::cout << "Hand Eye Calibration Matrix:\n";
+        cout << "Hand Eye Calibration Matrix:" << endl;
         printMatrix(*handEye, true);
-        std::cout << std::endl;
+        cout << endl;
     }
     kFinally
     {
@@ -132,13 +124,15 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
 }
 
 /***
- * This function is an application example to locating and moving to an object.
- * It scans the ballbar again, and moves the TCP to be above the center of one of the balls
+ * This fucntion is an application example to locating and moving to an object.
+ * It scans the ballbar again, and moves the TCP to be above the center of one
+ *of the balls
  *
  * @param    system      The Gocator System object
  * @param    sensor      The Gocator Sensor object
  * @param    sensor      A pointer to the KukaRobotDriver object
- * @param    handEye     The hand eye calibration matrix, obtained from the Calibrate function
+ * @param    handEye     The hand eye calibration matrix, obtained from the
+ *Calibrate function
  *
  * @return   Status indicator
  ***/
@@ -167,15 +161,20 @@ kStatus MoveToBallBar(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDr
 
         kTest(GoSystem_ReceiveData(system, &dataset, 20000000));
 
-        // Replace this function with the measurements of the feature you are trying to find
+        // Replace this function with the measurements of the feature you are trying
+        // to find
         ballbar_in_sensor = GoRobot::GetBallBarPoseMeasurement(dataset, 0);
 
         kTest(GoSensor_Stop(sensor));
 
-        // "Locate" will transform the pose from Sensor coordinate system to Base coordinate system
-        GoRobot::LocateEyeOnHandSystem(&flangePose, &ballbar_in_sensor, 1, *handEye, &ballbar_in_base);
-        ballbar_in_base_flipped = ballbar_in_base * GoRobot::KukaPose(0, 0, 0, 180, 0, 180).toMatrix();
-        ballbar_in_base_flipped_above = ballbar_in_base_flipped * GoRobot::KukaPose(0, 0, 20, 0, 0, 0).toMatrix();
+        // "Locate" will transform the pose from Sensor coordinate system to Base
+        // coordinate system
+        GoRobot::LocateEyeOnHandSystem(&flangePose, &ballbar_in_sensor, 1, *handEye,
+                                       &ballbar_in_base);
+        ballbar_in_base_flipped = ballbar_in_base
+                                  * GoRobot::KukaPose(0, 0, 0, 180, 0, 180).toMatrix();
+        ballbar_in_base_flipped_above = ballbar_in_base_flipped
+                                        * GoRobot::KukaPose(0, 0, 20, 0, 0, 0).toMatrix();
 
         robotDriver->move(&ballbar_in_base_flipped_above);
     }
@@ -205,7 +204,8 @@ int main()
     {
         kTest(GoSdk_Construct(&api));
 
-        robotDriver = (GoRobot::Driver *)new KukaRobotDriver(ROBOT_IP_ADDRESS, ROBOT_PORT, kObject_Alloc(api));
+        robotDriver = (GoRobot::Driver *)new KukaRobotDriver(ROBOT_IP_ADDRESS, ROBOT_PORT,
+                                                             kObject_Alloc(api));
 
         robotDriver->set_base(GoRobot::MATRIX_UNITY);
         robotDriver->set_tcp(tcp);
