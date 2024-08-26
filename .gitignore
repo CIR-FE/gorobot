@@ -8,7 +8,7 @@ vcpkg_installed/
 
 ### C++ ###
 # Build path
-build/
+out/
 
 # Prerequisites
 *.d
@@ -26,7 +26,7 @@ build/
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
+# *.dll
 
 # Fortran module files
 *.mod
