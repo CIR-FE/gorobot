@@ -11,8 +11,7 @@
  * @struct  KukaJoints
  * @brief   Angle position for each joint of the robot
  */
-struct KukaJoints
-{
+struct KukaJoints {
     double A[KUKA_NUMBER_OF_AXIS];
 };
 
@@ -21,8 +20,7 @@ struct KukaJoints
  * @brief   A message received from the Kuka robot
  *          Consists of the positions of the TCP and the Flange.
  */
-struct RobotMsg
-{
+struct RobotMsg {
     GoRobot::KukaPose actPose;
     GoRobot::KukaPose flangePose;
     KukaJoints joints;
@@ -35,12 +33,12 @@ struct RobotMsg
 /**
  * @class        KukaRobotDriver
  * @brief        A driver for a Kuka robot, implementing the GoRobotDriver interface.
- *               Used to communicate with the robot from a PC (could be run on the Kuka Controller as well)
- *               The robot must run the XmlLinearFollower program, see project resources for details.
+ *               Used to communicate with the robot from a PC (could be run on the Kuka Controller
+ * as well) The robot must run the XmlLinearFollower program, see project resources for details.
  */
 class KukaRobotDriver : GoRobot::Driver
 {
-public:
+ public:
     KukaRobotDriver();
     KukaRobotDriver(const char *ip, k32u port, kAlloc alloc = kNULL);
     ~KukaRobotDriver();
@@ -64,12 +62,14 @@ public:
 
     void set_base(GoRobot::Matrix base);
     void set_tcp(GoRobot::Matrix tcp);
-    void move(GoRobot::Matrix *poseList, size_t poseCount = 1, GoRobot::MoveMode moveMode = GoRobot::MoveMode::CONTINOUS_LINEAR);
-    void set_acc_speed(double acceleration, double speed, GoRobot::MoveMode moveMode = GoRobot::MoveMode::CONTINOUS_LINEAR);
+    void move(GoRobot::Matrix *poseList, size_t poseCount = 1,
+              GoRobot::MoveMode moveMode = GoRobot::MoveMode::CONTINOUS_LINEAR);
+    void set_acc_speed(double acceleration, double speed,
+                       GoRobot::MoveMode moveMode = GoRobot::MoveMode::CONTINOUS_LINEAR);
     GoRobot::Matrix get_tcp_pose();
     GoRobot::Matrix get_flange_pose();
 
-private:
+ private:
     kSocket _socket;
     kAlloc _alloc;
 
@@ -84,4 +84,4 @@ private:
     RobotMsg receiveMsg();
 };
 
-#endif // KUKA_ROBOT_DRIVER_H
+#endif  // KUKA_ROBOT_DRIVER_H

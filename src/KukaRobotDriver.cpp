@@ -1,10 +1,12 @@
 #include <RobotDrivers/KukaRobotDriver.h>
-#include <process.h>
-#include <iostream>
-#include <kApi/kApi.h>
 #include <kApi/Data/kString.h>
-#include <vector>
+#include <kApi/kApi.h>
+#include <process.h>
+
 #include <format>
+#include <iostream>
+#include <vector>
+
 
 static kXml KukaRobotDriver_startNewMessage(kAlloc alloc)
 {
@@ -30,7 +32,9 @@ static kXml KukaRobotDriver_startNewMessage(kAlloc alloc)
     return xmlSend;
 }
 
-KukaRobotDriver::KukaRobotDriver() : _alloc(kNULL), _socket(kNULL)
+KukaRobotDriver::KukaRobotDriver()
+    : _alloc(kNULL),
+      _socket(kNULL)
 {
 }
 
@@ -66,32 +70,30 @@ void KukaRobotDriver::set_acc_speed(double acceleration, double speed, GoRobot::
     kXml_SetAttr64f(xmlSend, itemMovement, "speed", speed_meters);
     kXml_SetAttr64f(xmlSend, itemMovement, "acceleration", acceleration_meters);
 
-    std::cout << std::format("Setting speed to: {} mm/s and acceleration to: {} mm/s^2", speed, acceleration) << "\n";
+    std::cout << std::format("Setting speed to: {} mm/s and acceleration to: {} mm/s^2", speed,
+                             acceleration)
+              << "\n";
     sendMessage(&xmlSend);
 }
 void KukaRobotDriver::move(GoRobot::Matrix *poseList, size_t poseCount, GoRobot::MoveMode moveMode)
 {
-    switch (moveMode)
-    {
-    case GoRobot::MoveMode::LINEAR:
-        for (size_t i = 0; i < poseCount; i++)
-        {
-            GoRobot::KukaPose pose(poseList[i]);
-            move(&pose, 1);
-        }
-        break;
-    case GoRobot::MoveMode::CONTINOUS_LINEAR:
-    {
-        std::vector<GoRobot::KukaPose> kukaPoses;
-        for (size_t i = 0; i < poseCount; i++)
-            kukaPoses.push_back(GoRobot::KukaPose(poseList[i]));
-        move(kukaPoses.data(), kukaPoses.size());
-    }
-    break;
+    switch (moveMode) {
+        case GoRobot::MoveMode::LINEAR:
+            for (size_t i = 0; i < poseCount; i++) {
+                GoRobot::KukaPose pose(poseList[i]);
+                move(&pose, 1);
+            }
+            break;
+        case GoRobot::MoveMode::CONTINOUS_LINEAR: {
+            std::vector<GoRobot::KukaPose> kukaPoses;
+            for (size_t i = 0; i < poseCount; i++)
+                kukaPoses.push_back(GoRobot::KukaPose(poseList[i]));
+            move(kukaPoses.data(), kukaPoses.size());
+        } break;
 
-    default:
-        throw "This driver only supports linear movements";
-        break;
+        default:
+            throw "This driver only supports linear movements";
+            break;
     }
 }
 GoRobot::Matrix KukaRobotDriver::get_tcp_pose()
@@ -112,16 +114,14 @@ void KukaRobotDriver::setAlloc(kAlloc alloc)
 
 void KukaRobotDriver::connect(const char *ip, k32u port)
 {
-    if (kOK != kSocket_Construct(&_socket, kIP_VERSION_4, kSOCKET_TYPE_TCP, _alloc))
-    {
+    if (kOK != kSocket_Construct(&_socket, kIP_VERSION_4, kSOCKET_TYPE_TCP, _alloc)) {
         _socket = kNULL;
         throw std::runtime_error("Connection Error");
     }
 
     kIpAddress ipAddress;
     kIpAddress_Parse(&ipAddress, ip);
-    if (kOK != kSocket_Connect(_socket, ipAddress, port, 20000))
-    {
+    if (kOK != kSocket_Connect(_socket, ipAddress, port, 20000)) {
         _socket = kNULL;
         kDestroyRef(&_socket);
         throw std::runtime_error("Connection Error");
@@ -137,19 +137,15 @@ kXml KukaRobotDriver::receiveXml(kAlloc alloc)
 
     std::string strReceive;
     std::string root, tag;
-    while (1)
-    {
+    while (1) {
         char r;
         kSize c;
-        if (kOK != kSocket_Read(_socket, &r, 1, &c))
-            break;
+        if (kOK != kSocket_Read(_socket, &r, 1, &c)) break;
 
         strReceive += r;
         tag += r;
-        if (r == '<')
-            tag = "";
-        if (r == '>')
-        {
+        if (r == '<') tag = "";
+        if (r == '>') {
             if (root == "")
                 root = tag;
             else if (tag == "/" + root)
@@ -158,8 +154,7 @@ kXml KukaRobotDriver::receiveXml(kAlloc alloc)
     }
 
     kXml_FromText(&xmlReceive, strReceive.c_str(), alloc);
-    if (kIsNull(xmlReceive))
-        throw std::runtime_error("Empty Message");
+    if (kIsNull(xmlReceive)) throw std::runtime_error("Empty Message");
     return xmlReceive;
 }
 void KukaRobotDriver::sendXml(kXml xmlSend)
@@ -173,9 +168,18 @@ void KukaRobotDriver::sendXml(kXml xmlSend)
     kDestroyRef(&strContent);
 }
 
-void Krd_kXmlSetAttr(kXml xml, kXmlItem item, const char *name, bool value) { kXml_SetAttrBool(xml, item, name, value); }
-void Krd_kXmlSetAttr(kXml xml, kXmlItem item, const char *name, kSize value) { kXml_SetAttrSize(xml, item, name, value); }
-void Krd_kXmlSetAttr(kXml xml, kXmlItem item, const char *name, k64f value) { kXml_SetAttr64f(xml, item, name, value); }
+void Krd_kXmlSetAttr(kXml xml, kXmlItem item, const char *name, bool value)
+{
+    kXml_SetAttrBool(xml, item, name, value);
+}
+void Krd_kXmlSetAttr(kXml xml, kXmlItem item, const char *name, kSize value)
+{
+    kXml_SetAttrSize(xml, item, name, value);
+}
+void Krd_kXmlSetAttr(kXml xml, kXmlItem item, const char *name, k64f value)
+{
+    kXml_SetAttr64f(xml, item, name, value);
+}
 template <class T>
 static void KukaRobotDriver_SetAttribute(kXml xml, const char *path, const char *name, T value)
 {
@@ -201,8 +205,7 @@ void KukaRobotDriver_addPose(kXml &xmlSend, GoRobot::KukaPose pt)
     kXml_SetAttr64f(xmlSend, itemFrame, "C", pt.rx);
 
     kSize count = 0;
-    if (kOK != kXml_AttrSize(xmlSend, itemStatus, "Count", &count))
-        count = 0;
+    if (kOK != kXml_AttrSize(xmlSend, itemStatus, "Count", &count)) count = 0;
 
     kXml_SetAttrSize(xmlSend, itemStatus, "Count", count + 1);
 }
@@ -222,7 +225,9 @@ RobotMsg KukaRobotDriver::set_tcp(GoRobot::KukaPose tcp)
     kXml_SetAttr64f(xmlSend, itemFrame, "B", tcp.ry);
     kXml_SetAttr64f(xmlSend, itemFrame, "C", tcp.rx);
 
-    std::cout << std::format("Setting tcp to: X={}, Y={}, Z={}, A={}, B={}, C={}", tcp.x, tcp.y, tcp.z, tcp.rz, tcp.ry, tcp.rx) << "\n";
+    std::cout << std::format("Setting tcp to: X={}, Y={}, Z={}, A={}, B={}, C={}", tcp.x, tcp.y,
+                             tcp.z, tcp.rz, tcp.ry, tcp.rx)
+              << "\n";
     return sendMessage(&xmlSend);
 }
 RobotMsg KukaRobotDriver::set_base(GoRobot::KukaPose base)
@@ -241,7 +246,9 @@ RobotMsg KukaRobotDriver::set_base(GoRobot::KukaPose base)
     kXml_SetAttr64f(xmlSend, itemFrame, "B", base.ry);
     kXml_SetAttr64f(xmlSend, itemFrame, "C", base.rx);
 
-    std::cout << std::format("Setting base to: X={}, Y={}, Z={}, A={}, B={}, C={}", base.x, base.y, base.z, base.rz, base.ry, base.rx) << "\n";
+    std::cout << std::format("Setting base to: X={}, Y={}, Z={}, A={}, B={}, C={}", base.x, base.y,
+                             base.z, base.rz, base.ry, base.rx)
+              << "\n";
     return sendMessage(&xmlSend);
 }
 RobotMsg KukaRobotDriver::move(GoRobot::KukaPose *pList, kSize pCount)
@@ -250,23 +257,22 @@ RobotMsg KukaRobotDriver::move(GoRobot::KukaPose *pList, kSize pCount)
     kSize msgPoseCount = 0;
 
     kXml xmlSend = KukaRobotDriver_startNewMessage(_alloc);
-    for (kSize i = 0; i < pCount; i++)
-    {
-        if (msgPoseCount >= KUKA_MAX_POINTS_PER_MSG)
-        {
+    for (kSize i = 0; i < pCount; i++) {
+        if (msgPoseCount >= KUKA_MAX_POINTS_PER_MSG) {
             ret = sendMessage(&xmlSend);
             xmlSend = KukaRobotDriver_startNewMessage(_alloc);
             KukaRobotDriver_SetAttribute(xmlSend, "Sensor/Command/Goto", "stop", false);
             msgPoseCount = 0;
         }
 
-        std::cout << std::format("Moving to: X={}, Y={}, Z={}, A={}, B={}, C={}", pList[i].x, pList[i].y, pList[i].z, pList[i].rz, pList[i].ry, pList[i].rx) << "\n";
+        std::cout << std::format("Moving to: X={}, Y={}, Z={}, A={}, B={}, C={}", pList[i].x,
+                                 pList[i].y, pList[i].z, pList[i].rz, pList[i].ry, pList[i].rx)
+                  << "\n";
         KukaRobotDriver_addPose(xmlSend, pList[i]);
         msgPoseCount++;
     }
 
-    if (kIsNull(xmlSend))
-        xmlSend = KukaRobotDriver_startNewMessage(_alloc);
+    if (kIsNull(xmlSend)) xmlSend = KukaRobotDriver_startNewMessage(_alloc);
     KukaRobotDriver_SetAttribute(xmlSend, "Sensor/Command/Goto", "stop", true);
     ret = sendMessage(&xmlSend);
 
@@ -298,7 +304,9 @@ RobotMsg KukaRobotDriver::receiveMsg()
     return sendMessage(&xmlSend);
 }
 
-RobotMsg::RobotMsg() {}
+RobotMsg::RobotMsg()
+{
+}
 RobotMsg::RobotMsg(kXml xmlReceive)
 {
     kXmlItem itemActPos = kNULL, itemStatus = kNULL, itemJoints = kNULL;
