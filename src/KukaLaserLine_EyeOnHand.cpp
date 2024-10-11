@@ -11,12 +11,13 @@
 #include <GoRobot/GoRobot.h>
 #include <GoSdk/GoSdk.h>
 #include <RobotDrivers/KukaRobotDriver.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/spdlog.h>
 #include <windows.h>
 
 #include <iostream>
 #include <string>
 #include <vector>
-
 
 #define SENSOR_IP_ADDRESS "192.168.1.10"  // Change this to the Sensor's IP address
 #define ROBOT_IP_ADDRESS "192.168.1.20"   // Change this to the Robot's IP address
@@ -30,21 +31,14 @@
 #define SURFACE_LENGTH 150        // mm
 #define SURFACE_LENGTH_BUFFER 50  // mm
 
-using namespace std;
-
-void printMatrix(const GoRobot::Matrix &m, bool multiline = false)
+std::string formatMatrix(const std::string &name, const GoRobot::Matrix &m)
 {
-    if (multiline) {
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Ix, m.Jx, m.Kx, m.Tx);
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Iy, m.Jy, m.Ky, m.Ty);
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", m.Iz, m.Jz, m.Kz, m.Tz);
-        printf("%12.3e, %12.3e, %12.3e, %12.3e, \n", 0.0, 0.0, 0.0, 1.0);
-    } else {
-        printf("%12.3e, %12.3e, %12.3e, ", m.Ix, m.Iy, m.Iz);
-        printf("%12.3e, %12.3e, %12.3e, ", m.Jx, m.Jy, m.Jz);
-        printf("%12.3e, %12.3e, %12.3e, ", m.Kx, m.Ky, m.Kz);
-        printf("%12.3e, %12.3e, %12.3e \n", m.Tx, m.Ty, m.Tz);
-    }
+    return fmt::format(
+        "{}:\n{:12.3e}, {:12.3e}, {:12.3e}, {:12.3e},\n{:12.3e}, {:12.3e}, {:12.3e}, "
+        "{:12.3e},\n{:12.3e}, {:12.3e}, {:12.3e}, {:12.3e},\n{:12.3e}, {:12.3e}, {:12.3e}, "
+        "{:12.3e}",
+        name, m.Ix, m.Jx, m.Kx, m.Tx, m.Iy, m.Jy, m.Ky, m.Ty, m.Iz, m.Jz, m.Kz, m.Tz, 0.0, 0.0, 0.0,
+        1.0);
 }
 
 GoRobot::Matrix initPose = GoRobot::KukaPose(250, -120, 30, 180, 0, 0).toMatrix();
@@ -66,9 +60,9 @@ GoRobot::Matrix tcp = GoRobot::KukaPose(0, 0, 200, 0, 0, 0).toMatrix();
 kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver,
                   GoRobot::Matrix *handEye)
 {
-    vector<GoRobot::Matrix> rPoses, sPoses;
-    vector<GoRobot::Matrix> tcpPoses(NUMBER_OF_POSES);
-    vector<GoRobot::Matrix> results(tcpPoses.size());
+    std::vector<GoRobot::Matrix> rPoses, sPoses;
+    std::vector<GoRobot::Matrix> tcpPoses(NUMBER_OF_POSES);
+    std::vector<GoRobot::Matrix> results(tcpPoses.size());
     GoDataSet dataset = kNULL;
     GoRobot::Matrix poseMatrix;
 
@@ -79,15 +73,18 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
         // multiple scans of the same object (ball bar) from different angles. Note
         // the ballbar should be laying flat at around Z=0
         GoRobot::EyeOnHandCalibrationPoses(tcpPoses.size(), 7, initPose, tcpPoses.data());
+        size_t i = 0;
         for (GoRobot::Matrix startPose : tcpPoses) {
             // Find the end pose of the frame
+            spdlog::info("Pose {}", i);
             GoRobot::Matrix endPose = startPose * movePose;
+            spdlog::info(formatMatrix("Start Pose", startPose));
+            spdlog::info(formatMatrix("End Pose", endPose));
 
             robotDriver->move(&startPose, 1);
             rPoses.push_back(robotDriver->get_flange_pose());
-            cout << "Flange:\t";
-            printMatrix(robotDriver->get_flange_pose());
-            Sleep(500);
+            spdlog::info(formatMatrix("Flange", robotDriver->get_flange_pose()));
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
             kTest(GoSensor_Start(sensor));
             // Trigger a surface generation on the sensor
@@ -97,8 +94,7 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
             kTest(GoSystem_ReceiveData(system, &dataset, 20000000));
             poseMatrix = GoRobot::GetBallBarPoseMeasurement(dataset, 0);
             sPoses.push_back(poseMatrix);
-            cout << "Sensor:\t";
-            printMatrix(poseMatrix);
+            spdlog::info(formatMatrix("Sensor", poseMatrix));
 
             kDestroyRef(&dataset);
 
@@ -110,9 +106,7 @@ kStatus Calibrate(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDriver
         // poses
         *handEye = GoRobot::CalibEyeOnHandSystem(rPoses.data(), sPoses.data(), (k32s)rPoses.size());
 
-        cout << "Hand Eye Calibration Matrix:" << endl;
-        printMatrix(*handEye, true);
-        cout << endl;
+        spdlog::info(formatMatrix("Hand Eye Calibration Matrix", *handEye));
     }
     kFinally
     {
@@ -189,6 +183,12 @@ kStatus MoveToBallBar(GoSystem system, GoSensor sensor, GoRobot::Driver *robotDr
 
 int main()
 {
+    // Initialize the logger
+    auto logger = spdlog::basic_logger_mt("basic_logger", "log.txt");
+    spdlog::set_default_logger(logger);
+    spdlog::set_level(spdlog::level::info);  // Set global log level to info
+    spdlog::flush_on(spdlog::level::info);   // Flush log on each info level message
+
     kAssembly api = kNULL;
     GoSystem system = kNULL;
     GoSensor sensor = kNULL;
