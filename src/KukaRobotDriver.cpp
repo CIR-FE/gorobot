@@ -7,7 +7,6 @@
 #include <iostream>
 #include <vector>
 
-
 static kXml KukaRobotDriver_startNewMessage(kAlloc alloc)
 {
     kXml xmlSend = kNULL;
@@ -101,6 +100,7 @@ GoRobot::Matrix KukaRobotDriver::get_tcp_pose()
     RobotMsg msg = receiveMsg();
     return msg.actPose.toMatrix();
 }
+
 GoRobot::Matrix KukaRobotDriver::get_flange_pose()
 {
     RobotMsg msg = receiveMsg();
@@ -131,6 +131,7 @@ KukaRobotDriver::~KukaRobotDriver()
 {
     kDestroyRef(&_socket);
 }
+
 kXml KukaRobotDriver::receiveXml(kAlloc alloc)
 {
     kXml xmlReceive = kNULL;
@@ -157,6 +158,7 @@ kXml KukaRobotDriver::receiveXml(kAlloc alloc)
     if (kIsNull(xmlReceive)) throw std::runtime_error("Empty Message");
     return xmlReceive;
 }
+
 void KukaRobotDriver::sendXml(kXml xmlSend)
 {
     kSize c;
@@ -288,6 +290,7 @@ RobotMsg KukaRobotDriver::sendMessage(kXml *xmlSend)
     // get an answer
     return RobotMsg(receiveXml(_alloc));
 }
+
 RobotMsg KukaRobotDriver::sendReset()
 {
     kXmlItem itemStatus = kNULL;
@@ -297,6 +300,7 @@ RobotMsg KukaRobotDriver::sendReset()
 
     return sendMessage(&xmlSend);
 }
+
 RobotMsg KukaRobotDriver::receiveMsg()
 {
     // Send an empty message to receive one
@@ -307,6 +311,7 @@ RobotMsg KukaRobotDriver::receiveMsg()
 RobotMsg::RobotMsg()
 {
 }
+
 RobotMsg::RobotMsg(kXml xmlReceive)
 {
     kXmlItem itemActPos = kNULL, itemStatus = kNULL, itemJoints = kNULL;
