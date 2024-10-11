@@ -19,6 +19,7 @@ else()
 endif()
 
 set(DLL_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+find_package(spdlog CONFIG REQUIRED)
 
 ## GOCATOR SDK
 include_directories(
@@ -45,6 +46,7 @@ target_link_libraries(gorobot PRIVATE
     kApi
     GoSdk
     GoRobot
+    spdlog::spdlog
     )
 
 # Copy DLLs
